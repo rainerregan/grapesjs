@@ -1,7 +1,0 @@
-
-> grapesjs-cli@4.1.3 build E:\WEBPRESS_NEW\webpress-monorepo\packages\grapesjs\packages\cli
-> cross-env BUILD_MODE=production webpack --config ./webpack.cli.ts
-
-10 assets
-28 modules
-webpack 5.94.0 compiled with [1m[33m2 warnings[39m[22m in 9421 ms
