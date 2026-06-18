@@ -17,7 +17,7 @@ npm warn Unknown user config "msvs_version". This will stop working in the next 
 
 Start building the library...
 
-asset [1m[33mgrapes.min.js[39m[22m [1m[33m1.05 MiB[39m[22m [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m [1m[33m[big][39m[22m (name: main) 1 related asset
+asset [1m[33mgrapes.min.js[39m[22m [1m[33m1.05 MiB[39m[22m [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m [1m[33m[big][39m[22m (name: main) 1 related asset
 
 [1m[33mWARNING[39m[22m in [1masset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
 This can impact web performance.
@@ -34,7 +34,7 @@ Entrypoints:
 You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
 For more info visit https://webpack.js.org/guides/code-splitting/[39m[22m
 
-webpack 5.94.0 compiled with [1m[33m3 warnings[39m[22m in 16750 ms 
+webpack 5.94.0 compiled with [1m[33m3 warnings[39m[22m in 19762 ms 
 
 
 Start building locale files...
@@ -75,7 +75,7 @@ Entrypoints:
 You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
 For more info visit https://webpack.js.org/guides/code-splitting/[39m[22m
 
-webpack 5.94.0 compiled with [1m[33m3 warnings[39m[22m in 10662 ms 
+webpack 5.94.0 compiled with [1m[33m3 warnings[39m[22m in 11464 ms 
 
 
 Building completed successfully!
