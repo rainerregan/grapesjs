@@ -88,6 +88,11 @@ export default (opts: Record<string, any> = {}): any => {
           options: {
             context: rootResolve(''),
             configFile: rootResolve('tsconfig.json'),
+            // Only type-check files actually reached from the bundle entry, not
+            // the whole tsconfig program (which `include`s `test/`). A library
+            // build shouldn't fail on its test suite — and it keeps the build
+            // resilient when test-only types (e.g. @types/jest) aren't installed.
+            onlyCompileBundledFiles: true,
           },
         },
         {
