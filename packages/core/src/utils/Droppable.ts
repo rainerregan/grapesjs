@@ -97,13 +97,44 @@ export default class Droppable {
     em.trigger('canvas:dragend', ev);
   }
 
+  /**
+   * Stop the in-progress sorter (hide its placeholder/drop-spot and reset `over`)
+   * WITHOUT removing the drag listeners — used when the pointer leaves the canvas
+   * mid-drag in the custom (pointer) path.
+   *
+   * The native HTML5 handlers (bound once via `toggleEffects`) live for the
+   * editor's whole lifetime, so running the full `endDrop` on every leave is fine
+   * for them. The custom pointer handlers, by contrast, are bound only for the
+   * duration of a single drag (`__customTglEff`, toggled by `startCustom`/`endCustom`).
+   * If `endDrop` ran here it would unbind `pointerenter`, so coming back into the
+   * canvas could never re-fire `handleDragEnter` — the drop spot would stay gone
+   * until pointerup and the drop itself would silently fail. Keeping the listeners
+   * lets a re-entry rebuild the sorter exactly like the first enter; the real
+   * teardown still happens on drop (`handleDrop`) or when the block panel ends the
+   * drag (`endCustom`). The per-sorter listeners are fully cleaned up here via
+   * `cancelDrag` (the same path the native leave uses), so re-entries don't leak.
+   */
+  pauseDrop(ev?: Event) {
+    const { em, dragStop } = this;
+    this.counter = 0;
+    dragStop && dragStop(true); // cancel: hides placeholder + flips `over` back to false
+    this.over = false;
+    this.dragStop = undefined;
+    this.draggedNode = undefined;
+    em.trigger('canvas:dragend', ev);
+  }
+
   handleDragLeave(ev: Event) {
     this.updateCounter(-1, ev);
   }
 
   updateCounter(value: number, ev: Event) {
     this.counter += value;
-    this.counter === 0 && this.endDrop(true, ev);
+    if (this.counter !== 0) return;
+    // Pointer left the drop area. In the custom pointer-drag path keep the drag
+    // listeners alive so a re-entry can restart the sorter (see `pauseDrop`); a
+    // native drag keeps its original full teardown.
+    this.getSorterOptions ? this.pauseDrop(ev) : this.endDrop(true, ev);
   }
 
   handleDragEnter(ev: DragEvent | Event) {
