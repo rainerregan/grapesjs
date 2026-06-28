@@ -569,7 +569,36 @@ export default class StyleManager extends ItemManagerModule<
           rule = cssC.get(valid, state, deviceW);
 
           if (!rule && !skipAdd) {
-            rule = cssC.add(valid, state, deviceW, {}, addOpts);
+            // No flat rule exists for this element's own class set. If the
+            // element is visibly styled through a CONTEXTUAL selector it can't
+            // reach (eg `.tpl-x .card`, `.section h1`, `.wp-feature .title`),
+            // spawning a new flat class rule (`.card`) is the wrong target: it
+            // has lower specificity, so edits silently fail to override the
+            // contextual rule, and the Style Manager reads 0 for values the
+            // element clearly has. In that case style the component's own #id
+            // rule, which wins by specificity and applies to THIS element only.
+            // When the element is NOT contextually styled, keep the original
+            // behavior (create a flat class rule) so plain class authoring still
+            // edits every element sharing that class as a group.
+            const el = model.getEl?.();
+            const styledByContext =
+              !!el &&
+              cssC.getRules().some((r: CssRule) => {
+                const add = r.get('selectorsAdd');
+                if (!add) return false;
+                try {
+                  return el.matches(add);
+                } catch {
+                  return false;
+                }
+              });
+
+            if (styledByContext && config.avoidInlineStyle) {
+              const id = model.getId();
+              rule = cssC.getIdRule(id, opts) || cssC.setIdRule(id, {}, opts);
+            } else {
+              rule = cssC.add(valid, state, deviceW, {}, addOpts);
+            }
           }
         } else if (config.avoidInlineStyle) {
           const id = model.getId();
