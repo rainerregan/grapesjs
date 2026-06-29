@@ -126,6 +126,20 @@ export interface SelectorManagerConfig {
   componentFirst?: boolean;
 
   /**
+   * Predicate to auto-mark a newly-added selector as `private` — rendered in the
+   * canvas and in exported code, but hidden from the Style Manager and excluded
+   * from group-edit/style targets. Use it to keep atomic utility classes (e.g.
+   * Tailwind `.px-4`) from ever becoming a global style-edit target: when an
+   * element carries only such classes, the Style Manager falls through to a
+   * per-element `#id` override instead of creating/mutating a shared `.px-4` rule.
+   * Consulted on every add path (typed, parsed, pasted, imported). A selector that
+   * already has an authored CSS rule is left styleable (treated as semantic).
+   * @example
+   * private: (name, type) => isTailwindUtility(name),
+   */
+  private?: (name: string, type: number) => boolean;
+
+  /**
    * Avoid rendering the default Selector Manager UI.
    * @default false
    */
