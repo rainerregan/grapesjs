@@ -253,9 +253,13 @@ export class DropLocationDeterminer<T, NodeType extends SortableTreeNode<T>> ext
       index = 0,
       placement = 'inside' as Placement;
     if (nodeHasChildren && childrenDimensions.length > 0) {
-      ({ index, placement } = findPosition(childrenDimensions, mouseX, mouseY));
-      placeholderDimensions = childrenDimensions[index]?.clone() ?? nodeDimensions.clone();
-      index = index + (placement == 'after' ? 1 : 0);
+      const { index: dimensionIndex, placement: foundPlacement } = findPosition(childrenDimensions, mouseX, mouseY);
+      placement = foundPlacement;
+      const dimension = childrenDimensions[dimensionIndex];
+      placeholderDimensions = dimension?.clone() ?? nodeDimensions.clone();
+      // Use the unfiltered (model-space) index so skipped children (e.g. comment
+      // nodes) don't cause an off-by-N insertion error.
+      index = (dimension?.indexEl ?? dimensionIndex) + (placement == 'after' ? 1 : 0);
     }
 
     return {
@@ -495,6 +499,7 @@ export class DropLocationDeterminer<T, NodeType extends SortableTreeNode<T>> ext
 
       const dim = this.getDim(el);
       dim.dir = this.getDirection(el, targetElement);
+      dim.indexEl = i;
       dims.push(dim);
     });
 
