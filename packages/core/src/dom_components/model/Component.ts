@@ -2030,7 +2030,7 @@ export default class Component extends StyleableModel<ComponentProperties> {
     if (avoidInline(this.em) && hasInlineStyle) {
       this.addStyle(
         isObject(inlineStyle) ? this.dataResolverWatchers.getValueOrResolver('styles', inlineStyle) : inlineStyle,
-        { avoidStore: true, noUndo: true },
+        { avoidStore: true, noUndo: true, state: '', mediaText: '' },
       );
     }
   }
