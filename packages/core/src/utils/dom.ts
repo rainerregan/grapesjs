@@ -21,6 +21,17 @@ export const motionsEv = 'transitionend oTransitionEnd transitionend webkitTrans
 
 export const isDoc = (el?: Node): el is Document => el?.nodeType === Node.DOCUMENT_NODE;
 
+/**
+ * Prevent the default of an event.
+ * Events coming from the canvas frame are re-dispatched on the main document (see `createCustomEvent`),
+ * so the original one, kept in `_parentEvent`, has to be prevented as well.
+ */
+export const preventDefault = (ev?: Event) => {
+  if (!ev) return;
+  ev.preventDefault();
+  (ev as any)._parentEvent?.preventDefault();
+};
+
 export const removeEl = (el?: HTMLElement) => {
   const parent = el && el.parentNode;
   parent && parent.removeChild(el);
@@ -168,7 +179,8 @@ export const getElRect = (el?: Element) => {
   let rectText;
 
   if (isTextNode(el)) {
-    const range = document.createRange();
+    if (!el.parentNode) return def;
+    const range = el.ownerDocument.createRange();
     range.selectNode(el);
     rectText = range.getBoundingClientRect();
     range.detach();

@@ -76,6 +76,7 @@ const storableDeps: (new (em: EditorModel) => IModule & IStorableModule)[] = [
   CssComposer,
   PageManager,
   ComponentManager,
+  SelectorManager,
 ];
 
 Extender({ $ });
@@ -843,7 +844,7 @@ export default class EditorModel extends Model {
     const keepUnusedStyles = !isUndefined(opts.keepUnusedStyles) ? opts.keepUnusedStyles : config.keepUnusedStyles;
     const cssc = this.Css;
     const wrp = opts.component || this.Components.getComponent();
-    const protCss = !avoidProt ? config.protectedCss! : '';
+    const protCss = !avoidProt ? config.protectedCss || '' : '';
     const css =
       wrp &&
       this.CodeManager.getCode(wrp, 'css', {
@@ -879,11 +880,14 @@ export default class EditorModel extends Model {
       this.clearDirtyCount();
     }, 1);
     const data = this.storeData();
-    await this.Storage.store(data, options);
-    setTimeout(() => {
-      this._isStoring = false;
-    }, 1);
-    return data;
+    try {
+      await this.Storage.store(data, options);
+      return data;
+    } finally {
+      setTimeout(() => {
+        this._isStoring = false;
+      }, 1);
+    }
   }
 
   /**

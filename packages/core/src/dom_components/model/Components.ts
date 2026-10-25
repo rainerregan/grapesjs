@@ -164,8 +164,9 @@ Component> {
     const cssc = em?.Css;
     const allByID = domc?.allById() || {};
     const parsed = this.parseString(input, opts);
-    const newCmps = getComponentsFromDefs(parsed, allByID, { skipViewUpdate: true, ...opts });
-    const { visitedCmps = {} } = opts;
+    const fromDefOpts = { skipViewUpdate: true, ...opts };
+    const newCmps = getComponentsFromDefs(parsed, allByID, fromDefOpts);
+    const { visitedCmps = {} } = fromDefOpts;
 
     // Clone styles for duplicated components
     Object.keys(visitedCmps).forEach((id) => {
@@ -418,15 +419,18 @@ Component> {
 
   onAdd(model: Component, c?: any, opts: { temporary?: boolean } = {}) {
     const { domc, em } = this;
-    const style = model.getStyle();
-    const avoidInline = em && em.getConfig().avoidInlineStyle;
+    const avoidInline = em.config.avoidInlineStyle;
     domc && domc.Component.ensureInList(model);
 
-    if (!isEmpty(style) && !avoidInline && em && em.getConfig().forceClass && !opts.temporary) {
-      const name = model.cid;
-      em.Css.setClassRule(name, style);
-      model.setStyle({});
-      model.addClass(name);
+    if (!avoidInline && em.config.forceClass && !opts.temporary) {
+      const style = model.getStyle();
+
+      if (!isEmpty(style)) {
+        const name = model.cid;
+        em.Css.setClassRule(name, style);
+        model.setStyle({});
+        model.addClass(name);
+      }
     }
 
     model.__postAdd({ recursive: true });

@@ -272,7 +272,7 @@ export default class Component extends StyleableModel<ComponentProperties> {
   views!: ComponentView[];
   view?: ComponentView;
   viewLayer?: ItemView;
-  rule?: CssRule;
+  rule?: CssRule | null;
   prevColl?: Components;
   __hasUm?: boolean;
   __symbReady?: boolean;
@@ -1132,7 +1132,7 @@ export default class Component extends StyleableModel<ComponentProperties> {
       return coll as any;
     } else {
       coll.reset(undefined, opts);
-      return components ? this.append(components, opts) : ([] as any);
+      return (components ? this.append(components, opts) : []) as any;
     }
   }
 
@@ -2028,10 +2028,10 @@ export default class Component extends StyleableModel<ComponentProperties> {
       (isObject(inlineStyle) && Object.keys(inlineStyle).length > 0);
 
     if (avoidInline(this.em) && hasInlineStyle) {
-      this.addStyle(
-        isObject(inlineStyle) ? this.dataResolverWatchers.getValueOrResolver('styles', inlineStyle) : inlineStyle,
-        { avoidStore: true, noUndo: true },
-      );
+      const opts = { avoidStore: true, noUndo: true, state: '', mediaText: '' };
+      const style = this.getStyle({ inline: true, skipResolve: true });
+      const baseStyle = this.getStyle({ ...opts, skipResolve: true });
+      this.setStyle({ ...baseStyle, ...style }, { ...opts, addStyle: style });
     }
   }
 

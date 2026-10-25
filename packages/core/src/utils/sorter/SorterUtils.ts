@@ -1,7 +1,6 @@
 import { $, Model, SetOptions } from '../../common';
 import EditorModel from '../../editor/model/Editor';
 import { isTextNode } from '../dom';
-import { matches as matchesMixin } from '../mixins';
 import { SortableTreeNode } from './SortableTreeNode';
 import { Placement, DragDirection, SorterOptions } from './types';
 import Dimension from './Dimension';
@@ -86,7 +85,7 @@ export function offset(el: HTMLElement) {
  * @return {Boolean}
  */
 export function matches(el: HTMLElement, selector: string): boolean {
-  return matchesMixin.call(el, selector);
+  return !!el?.matches?.(selector);
 }
 
 /**
@@ -145,7 +144,7 @@ export function closest(el: HTMLElement, selector: string): HTMLElement | undefi
  * @private
  */
 export function isStyleInFlow(el: HTMLElement, parent: HTMLElement): boolean {
-  if (isTextNode(el)) return false;
+  if (!el || isTextNode(el)) return false;
 
   const elementStyles = el.style || {};
   const $el = $(el);

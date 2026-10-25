@@ -128,7 +128,6 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
   storageKey = '';
   __update: Debounced;
   __ctn?: HTMLElement;
-
   /**
    * Get configuration object
    * @name getConfig
@@ -143,7 +142,6 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
     const ppfx = config.pStylePrefix;
     if (ppfx) config.stylePrefix = ppfx + config.stylePrefix;
 
-    // Global selectors container
     this.all = new Selectors(config.selectors);
     this.selected = new Selectors([], { em, config });
     this.states = new Collection<State>(
@@ -182,14 +180,6 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
       container: this.__ctn,
     };
   }
-
-  // postLoad() {
-  //   this.__postLoad();
-  //   const { em, model } = this;
-  //   const um = em.get('UndoManager');
-  //   um && um.add(model);
-  //   um && um.add(this.pages);
-  // },
 
   postRender() {
     this.__appendTo();
@@ -230,12 +220,11 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
       props.name = this.escapeName(props.label);
     }
 
-    const cname = props.name;
-    const config = this.getConfig();
-    const { all, em } = this;
-    const selector = cname ? (this.get(cname, props.type) as Selector) : all.where(props)[0];
+    const { all, em, config } = this;
+    const selector = all.get(props);
 
     if (!selector) {
+      const cname = props.name;
       // Auto-mark detected atomic/utility selectors (e.g. Tailwind `.px-4`) as
       // `private` so the Style Manager never edits them as a global rule. Every
       // entry path (typed, parsed, pasted, imported) funnels through here. The
@@ -273,7 +262,7 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
       name = name.substr(1);
     }
 
-    return this.all.where({ name, type })[0];
+    return this.all.get({ name, type } as any);
   }
 
   /**
@@ -573,6 +562,10 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
     selectorTags?.remove();
     this.selectorTags = undefined;
   }
+
+  // Need for the IStorableModule to run the clenup
+  load() {}
+  store() {}
 
   /**
    * Get common selectors from the current selection.

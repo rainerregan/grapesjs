@@ -8,7 +8,6 @@ type CanMoveSource = Component | ContentType;
 
 export default class CanvasNewComponentNode extends CanvasComponentNode {
   canMove(source: CanvasNewComponentNode, index: number): boolean {
-    const realIndex = this.getRealIndex(index);
     const { model: symbolModel, content, dragDef } = source._dragSource;
 
     const canMoveSymbol = !symbolModel || !this.isSourceSameSymbol(symbolModel);
@@ -16,11 +15,11 @@ export default class CanvasNewComponentNode extends CanvasComponentNode {
 
     if (Array.isArray(sourceContent)) {
       return (
-        canMoveSymbol && sourceContent.every((contentItem, i) => this.canMoveSingleContent(contentItem, realIndex + i))
+        canMoveSymbol && sourceContent.every((contentItem, i) => this.canMoveSingleContent(contentItem, index + i))
       );
     }
 
-    return canMoveSymbol && this.canMoveSingleContent(sourceContent, realIndex);
+    return canMoveSymbol && this.canMoveSingleContent(sourceContent, index);
   }
 
   private canMoveSingleContent(contentItem: ContentElement | Component, index: number): boolean {
@@ -57,7 +56,7 @@ export default class CanvasNewComponentNode extends CanvasComponentNode {
       // @ts-ignore
       model = this.model?.getView?.()?.insertComponent?.(content, { action: 'add-component' });
     } else {
-      model = this.model.components().add(content, { at: this.getRealIndex(index), action: 'add-component' });
+      model = this.model.components().add(content, { at: index, action: 'add-component' });
     }
     return new (this.constructor as any)(model);
   }
