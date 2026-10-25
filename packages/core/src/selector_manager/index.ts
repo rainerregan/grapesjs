@@ -224,6 +224,7 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
     const selector = all.get(props);
 
     if (!selector) {
+      const cname = props.name;
       // Auto-mark detected atomic/utility selectors (e.g. Tailwind `.px-4`) as
       // `private` so the Style Manager never edits them as a global rule. Every
       // entry path (typed, parsed, pasted, imported) funnels through here. The
