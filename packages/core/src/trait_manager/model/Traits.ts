@@ -24,6 +24,7 @@ export default class Traits extends CollectionWithCategories<Trait> {
       events: { update: TraitsEvents.categoryUpdate },
     });
     this.on('add', this.handleAdd);
+    this.on('remove', this.handleRemove);
     this.on('reset', this.handleReset);
     const tm = this.module;
     const tmOpts = tm?.getConfig();
@@ -39,7 +40,16 @@ export default class Traits extends CollectionWithCategories<Trait> {
   }
 
   handleReset(coll: TraitProperties[], { previousModels = [] }: { previousModels?: Trait[] } = {}) {
-    previousModels.forEach((model) => model.trigger('remove'));
+    previousModels.forEach((model) => {
+      model.trigger('remove');
+      model.stopListening();
+    });
+  }
+
+  // A removed trait still listens to its component (`change:attributes:<name>`),
+  // so swapped-out traits piled up and kept firing value events. Release them.
+  handleRemove(model: Trait) {
+    model.stopListening();
   }
 
   handleAdd(model: Trait) {
