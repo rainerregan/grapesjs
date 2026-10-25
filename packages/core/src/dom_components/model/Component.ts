@@ -867,6 +867,9 @@ export default class Component extends StyleableModel<ComponentProperties> {
     const { em } = this;
     const classes: string[] = [];
     const resolvedAttrs = { ...this.get('attributes')! };
+    // `__p` is the trait setter's undo marker (Trait.setTargetValue), not an
+    // HTML attribute — it was rendered on the canvas element and listed here.
+    delete resolvedAttrs.__p;
     const attributes = opts?.skipResolve
       ? this.dataResolverWatchers.getValueOrResolver('attributes', resolvedAttrs)
       : resolvedAttrs;
@@ -1029,6 +1032,12 @@ export default class Component extends StyleableModel<ComponentProperties> {
     const attrs = { ...this.get('attributes') };
     const traits = this.traits;
     traits.each((trait) => {
+      // A trait with a custom getter derives its value from somewhere else
+      // (classes, styles, another attribute), so its default must not be
+      // persisted under the trait's own name. It would only leak into the markup
+      // as a junk attribute, and a trait named `style` would later be applied as
+      // the element's inline style (attrUpdated → setStyle), wiping its styles.
+      if (trait.get('getValue')) return;
       const name = trait.getName();
       const value = trait.getInitValue();
 

@@ -236,6 +236,28 @@ export default class SelectorManager extends ItemManagerModule<SelectorManagerCo
     const selector = cname ? (this.get(cname, props.type) as Selector) : all.where(props)[0];
 
     if (!selector) {
+      // Auto-mark detected atomic/utility selectors (e.g. Tailwind `.px-4`) as
+      // `private` so the Style Manager never edits them as a global rule. Every
+      // entry path (typed, parsed, pasted, imported) funnels through here. The
+      // class stays on the element and in exported HTML — only SM targeting is
+      // affected. Defer to an already-authored rule (a template may legitimately
+      // use a utility-shaped name as a real semantic class).
+      if (
+        config.private &&
+        !(props instanceof Selector) &&
+        props.private == null &&
+        props.type !== Selector.TYPE_ID &&
+        cname &&
+        config.private(cname, props.type ?? Selector.TYPE_CLASS)
+      ) {
+        let authored = false;
+        try {
+          authored = !!em?.Css?.getRule(`.${cname}`);
+        } catch {
+          authored = false;
+        }
+        if (!authored) props.private = true;
+      }
       const selModel = props instanceof Selector ? props : new Selector(props, { ...cOpts, config, em });
       return all.add(selModel, cOpts);
     }

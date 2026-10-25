@@ -581,7 +581,17 @@ export default class CanvasModule extends Module<CanvasConfig> {
     const docActive = frame && document.activeElement === frame;
     const focused = docActive ? doc && doc.activeElement : document.activeElement;
 
-    return focused && !toIgnore.some((item) => focused.matches(item));
+    if (!focused || toIgnore.some((item) => focused.matches(item))) return false;
+    // Only focus that consumes typing or arrow keys blocks the keymaps. Any other
+    // focusable element (a layer name, a block tile, a panel heading) used to
+    // count as an input, silently disabling Delete/undo/copy until the canvas
+    // was clicked again.
+    return focused.matches(
+      'input, textarea, select, [contenteditable]:not([contenteditable="false"]), ' +
+        '[role="textbox"], [role="combobox"], [role="spinbutton"], [role="slider"], [role="listbox"], ' +
+        '[role="option"], [role="menu"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], ' +
+        '[role="radio"], [role="tab"], [role="tree"], [role="treeitem"], [role="grid"], [role="gridcell"]',
+    );
   }
 
   /**
