@@ -126,6 +126,17 @@ export class DropLocationDeterminer<T, NodeType extends SortableTreeNode<T>> ext
     );
 
     const mouseTargetEl = this.getMouseTargetElement(mouseEvent);
+
+    // Over a preview of the drop itself (an element marked
+    // `data-gjs-drop-preview`), the drop stays where the preview shows it.
+    // Deciding again from the content around it made the preview jump: drawing
+    // it moves that content, so the pointer lands on something else each time.
+    if (lastTargetNode && mouseTargetEl?.closest?.('[data-gjs-drop-preview]')) {
+      this.lastMoveData.mouseEvent = mouseEvent;
+      this.triggerMoveEvent(mouseX, mouseY);
+      return;
+    }
+
     const targetEl = this.getFirstElementWithAModel(mouseTargetEl);
     const hoveredModel = targetEl ? $(targetEl)?.data('model') : undefined;
     const hoveredNode = hoveredModel ? this.getOrCreateHoveredNode(hoveredModel) : undefined;
@@ -247,7 +258,9 @@ export class DropLocationDeterminer<T, NodeType extends SortableTreeNode<T>> ext
     nodeDimensions = !nodeDimensions ? this.getDim(node.element!) : nodeDimensions;
     node.nodeDimensions = nodeDimensions;
 
-    childrenDimensions = !childrenDimensions ? this.getChildrenDim(node) : childrenDimensions;
+    // Measured on every move, not cached on the node: a drop preview drawn in
+    // the target moves its children, and stale positions picked the wrong slot.
+    childrenDimensions = this.getChildrenDim(node);
     node.childrenDimensions = childrenDimensions;
     let placeholderDimensions = nodeDimensions.clone(),
       index = 0,
@@ -280,9 +293,10 @@ export class DropLocationDeterminer<T, NodeType extends SortableTreeNode<T>> ext
     const hoveredNode = new this.treeClass(hoveredModel);
     const sameHoveredNode = hoveredNode.equals(lastHoveredNode);
     const newHoveredNode = sameHoveredNode ? lastHoveredNode : hoveredNode;
-    newHoveredNode.nodeDimensions = sameHoveredNode
-      ? lastHoveredNode!.nodeDimensions!
-      : this.getDim(hoveredNode.element!);
+    // Measured fresh: a drop preview inside it changes its size, not only its
+    // position, and a cached box shifted by the scroll left the pointer
+    // "outside" an element it was over.
+    newHoveredNode.nodeDimensions = this.getDim(hoveredNode.element!);
 
     return newHoveredNode;
   }
@@ -361,6 +375,14 @@ export class DropLocationDeterminer<T, NodeType extends SortableTreeNode<T>> ext
   private getFirstElementWithAModel(mouseTargetEl: HTMLElement | null): HTMLElement | null {
     const isModelPresent = (el: HTMLElement) => $(el).data('model') !== undefined;
 
+    // Decorative layers (`aria-hidden="true"`: background overlays, sparkles)
+    // often cover the content. Start from outside them, so the drop goes into
+    // the content the pointer is over, never into a decoration.
+    const hidden = mouseTargetEl?.closest?.('[aria-hidden="true"]') as HTMLElement | null;
+    if (hidden && hidden !== this.containerContext.container && this.containerContext.container.contains(hidden)) {
+      mouseTargetEl = hidden.parentElement;
+    }
+
     while (mouseTargetEl && this.containerContext.container.contains(mouseTargetEl)) {
       if (isModelPresent(mouseTargetEl)) {
         return mouseTargetEl;
@@ -383,10 +405,17 @@ export class DropLocationDeterminer<T, NodeType extends SortableTreeNode<T>> ext
     } = this.lastMoveData;
 
     const sameHoveredNode = targetNode.equals(lastHoveredNode);
-    targetNode.nodeDimensions = sameHoveredNode ? lastHoveredNode!.nodeDimensions! : this.getDim(targetNode.element!);
+    targetNode.nodeDimensions = this.getDim(targetNode.element!);
     const hoverIndex = this.getIndexInParent(targetNode, targetNode.nodeDimensions!, mouseX, mouseY);
     const sameHoveredIndex = hoverIndex === lastHoveredIndex;
-    const isWithinDropArea = targetNode.isWithinDropBounds(mouseX, mouseY);
+    // The container holding the drop preview counts its edges as inside. The
+    // preview makes it taller, which moved its edge zone away from the pointer:
+    // the drop then left it, the container shrank back, and the drop flipped
+    // in and out on every move. Leaving it now takes leaving its bounds.
+    const holdsPreview = !!targetNode.element?.querySelector?.('[data-gjs-drop-preview]');
+    const isWithinDropArea = holdsPreview
+      ? !!targetNode.nodeDimensions?.isWithinBounds(mouseX, mouseY)
+      : targetNode.isWithinDropBounds(mouseX, mouseY);
     const sameHoverPosition = sameHoveredNode && sameHoveredIndex && isWithinDropArea === lastHoveredWithinBounds;
 
     if (sameHoverPosition && lastTargetNode) return lastTargetNode;

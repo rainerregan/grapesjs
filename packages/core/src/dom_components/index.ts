@@ -199,6 +199,13 @@ export interface CanMoveResult {
   source?: Component | null;
 }
 
+/**
+ * A placement rule added with `addMoveRule`: return `false` to refuse moving
+ * `source` into `target` (at `index`). Anything else leaves the decision to the
+ * other checks.
+ */
+export type MoveRule = (args: { target: Component; source: Component; index?: number }) => boolean | void;
+
 export default class ComponentManager extends ItemManagerModule<DomComponentsConfig, any> {
   componentTypes: ComponentStackItem[] = [
     {
@@ -340,6 +347,8 @@ export default class ComponentManager extends ItemManagerModule<DomComponentsCon
 
   componentsById: { [id: string]: Component } = {};
   componentView?: ComponentWrapperView;
+  /** @private */
+  moveRules: MoveRule[] = [];
 
   Component = Component;
 
@@ -931,7 +940,32 @@ export default class ComponentManager extends ItemManagerModule<DomComponentsCon
 
     if (!droppable || isTargetInside) return { ...result, reason: CanMoveReason.TargetReject };
 
+    for (const rule of this.moveRules) {
+      if (rule({ target, source: srcModel, index }) === false) {
+        return { ...result, reason: CanMoveReason.TargetReject };
+      }
+    }
+
     return { ...result, result: true };
+  }
+
+  /**
+   * Add a placement rule, checked by `canMove` after the components' own
+   * `draggable`/`droppable` settings, so it applies to every drag, drop and move.
+   * Return `false` from the rule to refuse the move.
+   * @param {Function} rule `({ target, source, index }) => boolean | void`
+   * @returns {Function} Removes the rule.
+   * @example
+   * // Sections only go straight into the page body
+   * const remove = editor.Components.addMoveRule(({ target, source }) => {
+   *   if (source.get('tagName') === 'section') return target === editor.getWrapper();
+   * });
+   */
+  addMoveRule(rule: MoveRule): () => void {
+    this.moveRules.push(rule);
+    return () => {
+      this.moveRules = this.moveRules.filter((item) => item !== rule);
+    };
   }
 
   allById() {

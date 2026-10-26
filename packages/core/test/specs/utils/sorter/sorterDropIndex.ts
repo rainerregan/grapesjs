@@ -152,8 +152,10 @@ describe('Sorter drop-index offset (comment-node skew)', () => {
 
       const parentDim = makeDim(0, 300);
       parent.nodeDimensions = parentDim;
-      // Pre-supply childrenDimensions with correct indexEl so getChildrenDim is bypassed
-      parent.childrenDimensions = [makeDim(0, 100, 1), makeDim(100, 100, 3), makeDim(200, 100, 4)];
+      // The children's measured positions, with their model-space indexEl
+      jest
+        .spyOn(determiner as any, 'getChildrenDim')
+        .mockReturnValue([makeDim(0, 100, 1), makeDim(100, 100, 3), makeDim(200, 100, 4)]);
 
       // y=280 is inside the last child (top=200, height=100) and past its center
       const result = (determiner as any).getDropPosition(parent, 100, 280);
@@ -176,8 +178,10 @@ describe('Sorter drop-index offset (comment-node skew)', () => {
       ]);
 
       parent.nodeDimensions = makeDim(0, 300);
-      // Pre-supply childrenDimensions: skip items 0 and 2
-      parent.childrenDimensions = [makeDim(0, 100, 1), makeDim(100, 100, 3), makeDim(200, 100, 4)];
+      // The children's measured positions: items 0 and 2 skipped
+      jest
+        .spyOn(determiner as any, 'getChildrenDim')
+        .mockReturnValue([makeDim(0, 100, 1), makeDim(100, 100, 3), makeDim(200, 100, 4)]);
 
       // y=40 is in first child (top=0, height=100) before its center (50)
       const result = (determiner as any).getDropPosition(parent, 100, 40);
@@ -219,7 +223,9 @@ describe('Sorter drop-index offset (comment-node skew)', () => {
       ]);
 
       parent.nodeDimensions = makeDim(0, 300);
-      parent.childrenDimensions = [makeDim(0, 100, 0), makeDim(100, 100, 1), makeDim(200, 100, 2)];
+      jest
+        .spyOn(determiner as any, 'getChildrenDim')
+        .mockReturnValue([makeDim(0, 100, 0), makeDim(100, 100, 1), makeDim(200, 100, 2)]);
 
       // y=280 → after last child (index 2) → 2+1=3
       const result = (determiner as any).getDropPosition(parent, 100, 280);

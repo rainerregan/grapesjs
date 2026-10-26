@@ -467,6 +467,43 @@ describe('DOM Components', () => {
         expect(result.result).toBe(false);
         expect(result.reason).toBe(CanMoveReason.TargetReject);
       });
+
+      test('a move rule returning false refuses the move', () => {
+        const target = obj.addComponent({ tagName: 'div' }) as Component;
+        const source = obj.addComponent({ tagName: 'section' }) as Component;
+        const seen: any[] = [];
+        const remove = obj.addMoveRule((args) => {
+          seen.push(args);
+          if (args.source.get('tagName') === 'section') return false;
+        });
+
+        expect(obj.canMove(target, source, 2)).toMatchObject({ result: false, reason: CanMoveReason.TargetReject });
+        expect(seen[0]).toEqual({ target, source, index: 2 });
+
+        remove();
+        expect(obj.canMove(target, source).result).toBe(true);
+      });
+
+      test('a move rule returning nothing or true leaves the decision to the other checks', () => {
+        const target = obj.addComponent({ tagName: 'div' }) as Component;
+        const closed = obj.addComponent({ tagName: 'div', droppable: false }) as Component;
+        const source = obj.addComponent({ tagName: 'span' }) as Component;
+        obj.addMoveRule(() => undefined);
+        obj.addMoveRule(() => true);
+
+        expect(obj.canMove(target, source).result).toBe(true);
+        expect(obj.canMove(closed, source).result).toBe(false);
+      });
+
+      test('move rules are not asked about moves the components already refuse', () => {
+        const closed = obj.addComponent({ tagName: 'div', droppable: false }) as Component;
+        const source = obj.addComponent({ tagName: 'span' }) as Component;
+        const rule = jest.fn(() => true);
+        obj.addMoveRule(rule);
+
+        obj.canMove(closed, source);
+        expect(rule).not.toHaveBeenCalled();
+      });
     });
   });
 
